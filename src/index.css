@@ -1,0 +1,29 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+/* Bootstrap has min-width: 0 helpers but no min-height counterpart, and the shell needs
+   one so the scrolling <main> can shrink inside the flex row. */
+.min-h-0 {
+  min-height: 0;
+}
+
+.min-w-0 {
+  min-width: 0;
+}
+
+.object-fit-cover {
+  object-fit: cover;
+}
+
+/* The mask-based Modus icons render as inline-block boxes; keeping them inline-flex stops
+   them from nudging adjacent text off the baseline inside buttons and list rows. */
+i[class^='modus-icon-'],
+i[class*=' modus-icon-'] {
+  display: inline-block;
+  flex-shrink: 0;
+}
