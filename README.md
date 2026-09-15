@@ -64,13 +64,13 @@ works embedded in Trimble Connect, which supplies its own token.
 
 ## Deploying
 
-Production runs at <https://site-pass.vercel.app>. The app is a static Vite build behind a
-SPA rewrite (`vercel.json`), so the `/callback` and `/logout-callback` routes registered
-with Trimble ID resolve to `index.html`.
+Production runs at <https://site-pass-omega.vercel.app>. The app is a static Vite build
+behind a SPA rewrite (`vercel.json`), so the `/callback` and `/logout-callback` routes
+registered with Trimble ID resolve to `index.html`.
 
 The `VITE_` variables in `.env.production` are baked in at build time; set the same names in
 the Vercel project if you would rather manage them there. Register
-`https://site-pass.vercel.app/manifest.json` as an extension in Trimble Connect.
+`https://site-pass-omega.vercel.app/manifest.json` as an extension in Trimble Connect.
 
 Preview deployments get a different origin than the two redirect URLs registered with
 Trimble ID, so standalone sign-in only works on the production domain. Embedded mode is
