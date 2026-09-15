@@ -52,6 +52,7 @@ export default {
   regions: {
     northAmerica: 'Noord-Amerika',
     europe: 'Europa',
+    unitedKingdom: 'Verenigd Koninkrijk',
     asiaPacific: 'Azië-Pacific',
     australia: 'Australië',
   },
