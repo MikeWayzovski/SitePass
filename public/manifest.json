@@ -1,8 +1,8 @@
 {
   "title": "SitePass",
   "description": "Onboard field crews, replace absent workers, and rotate subcontractors across Trimble Connect projects.",
-  "icon": "https://sitepass.vercel.app/sitepass-logo.svg",
-  "url": "https://sitepass.vercel.app/",
+  "icon": "https://site-pass.vercel.app/sitepass-logo.svg",
+  "url": "https://site-pass.vercel.app/",
   "configCommand": "open_settings",
   "enabled": true
 }

@@ -58,16 +58,20 @@ npm install
 npm run dev
 ```
 
-Standalone sign-in needs Trimble ID credentials. Copy `.env.example` to `.env.local` and
-fill in `VITE_CONFIGURATION_ENDPOINT`, `VITE_CLIENT_ID` and `VITE_SCOPES`. Without them the
-app still works embedded in Trimble Connect, which supplies its own token.
+Standalone sign-in uses the Trimble ID application `tc-Site-Pass`. Copy `.env.example` to
+`.env.local` and point the redirect URLs at your local port. Without them the app still
+works embedded in Trimble Connect, which supplies its own token.
 
 ## Deploying
 
-The app is a static Vite build behind a SPA rewrite (`vercel.json`), so the `/callback` and
-`/logout-callback` routes resolve to `index.html`.
+Production runs at <https://site-pass.vercel.app>. The app is a static Vite build behind a
+SPA rewrite (`vercel.json`), so the `/callback` and `/logout-callback` routes registered
+with Trimble ID resolve to `index.html`.
 
-Set the `VITE_` variables in the hosting environment, then register
-`https://<your-deployment>/manifest.json` as an extension in Trimble Connect. Update the
-`icon` and `url` fields in `public/manifest.json` to match your actual deployment URL before
-publishing.
+The `VITE_` variables in `.env.production` are baked in at build time; set the same names in
+the Vercel project if you would rather manage them there. Register
+`https://site-pass.vercel.app/manifest.json` as an extension in Trimble Connect.
+
+Preview deployments get a different origin than the two redirect URLs registered with
+Trimble ID, so standalone sign-in only works on the production domain. Embedded mode is
+unaffected.
