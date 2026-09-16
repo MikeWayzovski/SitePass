@@ -19,10 +19,17 @@ import { resolveAccessToken, isTokenUnavailable, clearCachedToken } from './util
 import { isTidConfigured } from './api/client';
 import { getProjects } from './api/projectsApi';
 import { getCurrentUser } from './api/usersApi';
-import { listPeopleAcrossProjects } from './api/accessApi';
+import { listPeopleAcrossProjects, fullName } from './api/accessApi';
 import { Logger } from './utils/logger';
+import {
+  recordAuditEntry,
+  exportToCSV,
+  exportToJSON,
+  stampFileName,
+} from './utils/auditLogger';
+import { saveFilesToLogsFolder } from './api/filesApi';
 
-/** People are scanned across the most recently touched sites; a full account scan is too slow. */
+/** People are scanned across the most recently touched projects; a full account scan is too slow. */
 const PEOPLE_SCAN_LIMIT = 12;
 
 const byRecency = (a, b) =>
@@ -32,7 +39,7 @@ function App() {
   const { t } = useI18n();
   const { isAuthenticated, isLoading: isAuthLoading, getAccessTokenSilently, loginWithRedirect, logout, error: authError } =
     useAuth();
-  const { isEmbedded, workspaceApi, embeddedToken } = useWorkspaceApi();
+  const { isEmbedded, workspaceApi, embeddedToken, embeddedProject } = useWorkspaceApi();
 
   const { settings, updateSetting } = useSettings();
   const { toasts, showToast, dismissToast } = useToast();
@@ -163,6 +170,56 @@ function App() {
     if (typeof logout === 'function') logout();
   }, [logout]);
 
+  const auditProjectId = embeddedProject?.id || settings.auditProjectId || '';
+
+  const recordAudit = useCallback(
+    async (partial) => {
+      const entry = recordAuditEntry({
+        ...partial,
+        executedBy: fullName(currentUser) || currentUser?.email || '',
+      });
+
+      if (!settings.autoSaveAudit) return entry;
+      if (!auditProjectId) {
+        showToast(t('settings.auditNeedProject'), 'warning');
+        return entry;
+      }
+
+      try {
+        const token = await getToken();
+        const prefix = `sitepass-${String(entry.actionType).toLowerCase()}`;
+        await saveFilesToLogsFolder(token, region, auditProjectId, [
+          {
+            name: stampFileName(prefix, 'csv'),
+            content: exportToCSV([entry], settings.csvSeparator),
+            type: 'text/csv',
+          },
+          {
+            name: stampFileName(prefix, 'json'),
+            content: exportToJSON([entry]),
+            type: 'application/json',
+          },
+        ]);
+        showToast(t('settings.auditSaved'), 'success');
+      } catch (error) {
+        Logger.error('Could not auto-save the audit log', error.message);
+        showToast(t('settings.auditSaveFailed', { message: error.message }), 'danger');
+      }
+
+      return entry;
+    },
+    [
+      currentUser,
+      settings.autoSaveAudit,
+      settings.csvSeparator,
+      auditProjectId,
+      getToken,
+      region,
+      showToast,
+      t,
+    ],
+  );
+
   const callbackPath = window.location.pathname.replace(/\/$/, '') || '/';
   const isAuthCallback =
     callbackPath === '/callback' && Boolean(new URLSearchParams(window.location.search).get('code'));
@@ -187,11 +244,23 @@ function App() {
     getToken,
     defaults: settings,
     showToast,
+    recordAudit,
   };
 
   const renderView = () => {
     if (activeView === 'settings') {
-      return <SettingsView settings={settings} updateSetting={updateSetting} showToast={showToast} />;
+      return (
+        <SettingsView
+          settings={settings}
+          updateSetting={updateSetting}
+          showToast={showToast}
+          projects={projects}
+          region={region}
+          getToken={getToken}
+          embeddedProject={embeddedProject}
+          people={people}
+        />
+      );
     }
 
     if (isLoadingProjects) {

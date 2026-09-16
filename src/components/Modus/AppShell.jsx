@@ -3,6 +3,7 @@ import ModusIcon from './ModusIcon';
 import UserMenu from '../Auth/UserMenu';
 import { useI18n } from '../../i18n/context';
 import { REGIONS } from '../../api/config';
+import { APP_VERSION } from '../../appInfo';
 
 const NAV_ITEMS = [
   { id: 'onboard', icon: 'user-plus', labelKey: 'nav.onboard', hintKey: 'nav.onboardHint' },
@@ -98,6 +99,11 @@ const AppShell = ({
           </button>
         ))}
       </nav>
+
+      <footer className="bg-body border-top px-3 py-2 d-none d-md-flex justify-content-between align-items-center flex-shrink-0 small text-muted">
+        <span>{t('app.name')}</span>
+        <span>v{APP_VERSION}</span>
+      </footer>
     </div>
   );
 };

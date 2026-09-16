@@ -21,7 +21,7 @@ const LEAVER_OPTIONS = [
   { id: 'project', labelKey: 'replace.removeAll', hintKey: 'replace.removeAllHint' },
 ];
 
-const RelayView = ({ projects, people, isLoadingPeople, region, getToken, defaults, showToast }) => {
+const RelayView = ({ projects, people, isLoadingPeople, region, getToken, defaults, showToast, recordAudit }) => {
   const { t } = useI18n();
 
   const [leaver, setLeaver] = useState(null);
@@ -65,8 +65,11 @@ const RelayView = ({ projects, people, isLoadingPeople, region, getToken, defaul
     setIsConfirmOpen(false);
     setIsRunning(true);
     setReport([]);
-
-    const appendStep = (entry) => setReport((current) => [...current, entry]);
+    const steps = [];
+    const appendStep = (entry) => {
+      steps.push(entry);
+      setReport((current) => [...current, entry]);
+    };
 
     try {
       const token = await getToken();
@@ -107,9 +110,27 @@ const RelayView = ({ projects, people, isLoadingPeople, region, getToken, defaul
           : t('replace.successBody', { to: email, count: selection.targets.length }),
         grantFailed ? 'warning' : 'success',
       );
+
+      await recordAudit?.({
+        actionType: 'REPLACE',
+        targetUserEmail: leaver.email,
+        replacementUserEmail: email,
+        projectsAffected: selection.targets.map((target) => target.projectName),
+        groupsAssigned: [...new Set(selection.targets.flatMap((target) => target.groupNames || []))],
+        stepDetails: steps,
+      });
     } catch (error) {
       Logger.error('Handover failed', error.message);
       showToast(t('errors.generic', { message: error.message }), 'danger');
+      await recordAudit?.({
+        actionType: 'REPLACE',
+        targetUserEmail: leaver?.email || '',
+        replacementUserEmail: email,
+        projectsAffected: selection.targets.map((target) => target.projectName),
+        groupsAssigned: [...new Set(selection.targets.flatMap((target) => target.groupNames || []))],
+        stepDetails: steps,
+        threw: true,
+      });
     } finally {
       setIsRunning(false);
     }

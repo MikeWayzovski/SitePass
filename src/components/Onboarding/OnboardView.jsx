@@ -15,7 +15,7 @@ import { Logger } from '../../utils/logger';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const OnboardView = ({ projects, people, isLoadingPeople, region, getToken, defaults, showToast }) => {
+const OnboardView = ({ projects, people, isLoadingPeople, region, getToken, defaults, showToast, recordAudit }) => {
   const { t } = useI18n();
 
   const [template, setTemplate] = useState(null);
@@ -50,6 +50,7 @@ const OnboardView = ({ projects, people, isLoadingPeople, region, getToken, defa
     setIsConfirmOpen(false);
     setIsRunning(true);
     setReport([]);
+    const steps = [];
 
     try {
       const token = await getToken();
@@ -62,7 +63,10 @@ const OnboardView = ({ projects, people, isLoadingPeople, region, getToken, defa
         targets,
         notify,
         createMissingGroups,
-        onStep: (entry) => setReport((current) => [...current, entry]),
+        onStep: (entry) => {
+          steps.push(entry);
+          setReport((current) => [...current, entry]);
+        },
       });
 
       const failed = result.filter((entry) => entry.status === 'failed').length;
@@ -70,9 +74,27 @@ const OnboardView = ({ projects, people, isLoadingPeople, region, getToken, defa
         failed ? t('progress.someFailed') : t('onboard.successBody', { email, count: targets.length }),
         failed ? 'warning' : 'success',
       );
+
+      await recordAudit?.({
+        actionType: 'ONBOARD',
+        targetUserEmail: email,
+        replacementUserEmail: '',
+        projectsAffected: targets.map((target) => target.projectName),
+        groupsAssigned: [...new Set(targets.flatMap((target) => target.groupNames || []))],
+        stepDetails: result,
+      });
     } catch (error) {
       Logger.error('Onboarding failed', error.message);
       showToast(t('errors.generic', { message: error.message }), 'danger');
+      await recordAudit?.({
+        actionType: 'ONBOARD',
+        targetUserEmail: email,
+        replacementUserEmail: '',
+        projectsAffected: selection.targets.map((target) => target.projectName),
+        groupsAssigned: [...new Set(selection.targets.flatMap((target) => target.groupNames || []))],
+        stepDetails: steps,
+        threw: true,
+      });
     } finally {
       setIsRunning(false);
     }

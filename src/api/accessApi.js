@@ -224,3 +224,6 @@ export const revokeAccess = async ({ token, region, userId, targets, mode = 'pro
   Logger.info('Access revoke finished', { userId, steps: report.length });
   return report;
 };
+
+export { saveFilesToLogsFolder, LOGS_FOLDER_NAME } from './filesApi';
+

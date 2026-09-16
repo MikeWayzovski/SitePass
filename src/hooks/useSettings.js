@@ -7,6 +7,9 @@ const DEFAULTS = {
   role: 'USER',
   notify: true,
   createMissingGroups: true,
+  autoSaveAudit: false,
+  csvSeparator: 'semicolon',
+  auditProjectId: '',
 };
 
 const read = () => {
