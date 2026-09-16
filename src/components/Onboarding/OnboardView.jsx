@@ -23,7 +23,7 @@ const OnboardView = ({ projects, people, isLoadingPeople, region, getToken, defa
   const [emailError, setEmailError] = useState('');
   const [role, setRole] = useState(defaults.role);
   const [notify, setNotify] = useState(defaults.notify);
-  const [createMissingCrews, setCreateMissingCrews] = useState(defaults.createMissingCrews);
+  const [createMissingGroups, setCreateMissingGroups] = useState(defaults.createMissingGroups);
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
@@ -61,7 +61,7 @@ const OnboardView = ({ projects, people, isLoadingPeople, region, getToken, defa
         email,
         targets,
         notify,
-        createMissingCrews,
+        createMissingGroups,
         onStep: (entry) => setReport((current) => [...current, entry]),
       });
 
@@ -168,12 +168,12 @@ const OnboardView = ({ projects, people, isLoadingPeople, region, getToken, defa
               <input
                 className="form-check-input"
                 type="checkbox"
-                id="onboard-create-crews"
-                checked={createMissingCrews}
-                onChange={(event) => setCreateMissingCrews(event.target.checked)}
+                id="onboard-create-groups"
+                checked={createMissingGroups}
+                onChange={(event) => setCreateMissingGroups(event.target.checked)}
                 disabled={isRunning}
               />
-              <label className="form-check-label small" htmlFor="onboard-create-crews">
+              <label className="form-check-label small" htmlFor="onboard-create-groups">
                 {t('onboard.createMissing')}
               </label>
             </div>
@@ -184,11 +184,11 @@ const OnboardView = ({ projects, people, isLoadingPeople, region, getToken, defa
               <Spinner label={t('loading.access')} small />
             ) : (
               <AccessMatrix
-                sites={selection.sites}
-                selectedSiteIds={selection.selectedSiteIds}
-                selectedCrewsBySite={selection.selectedCrewsBySite}
-                onToggleSite={selection.toggleSite}
-                onToggleCrew={selection.toggleCrew}
+                projects={selection.projects}
+                selectedProjectIds={selection.selectedProjectIds}
+                selectedGroupsByProject={selection.selectedGroupsByProject}
+                onToggleProject={selection.toggleProject}
+                onToggleGroup={selection.toggleGroup}
                 onSelectAll={selection.selectAll}
                 onClearAll={selection.clearAll}
                 disabled={isRunning}
@@ -222,8 +222,8 @@ const OnboardView = ({ projects, people, isLoadingPeople, region, getToken, defa
         title={t('onboard.confirmTitle')}
         message={t('onboard.confirmBody', {
           email,
-          sites: t('common.site', { count: selection.targets.length }),
-          crews: t('common.crew', { count: selection.crewCount }),
+          projects: t('common.project', { count: selection.targets.length }),
+          groups: t('common.group', { count: selection.groupCount }),
         })}
         confirmText={t('onboard.submit')}
         onConfirm={handleGrant}

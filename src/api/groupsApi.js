@@ -27,7 +27,7 @@ export const getProjectGroups = async (token, regionName, projectId) => {
     if (!response.ok) return [];
     return asList(await response.json());
   } catch (error) {
-    Logger.warn(`Could not load crews for project ${projectId}`, error.message);
+    Logger.warn(`Could not load groups for project ${projectId}`, error.message);
     return [];
   }
 };
@@ -41,7 +41,7 @@ export const getGroupUsers = async (token, regionName, groupId) => {
     if (!response.ok) return [];
     return asList(await response.json());
   } catch (error) {
-    Logger.warn(`Could not load members of crew ${groupId}`, error.message);
+    Logger.warn(`Could not load members of group ${groupId}`, error.message);
     return [];
   }
 };
@@ -56,10 +56,10 @@ export const createProjectGroup = async (token, regionName, projectId, groupName
 
   if (!response.ok) {
     const body = await response.text().catch(() => '');
-    throw new Error(`Could not create crew "${groupName}" (${response.status}). ${body}`.trim());
+    throw new Error(`Could not create group "${groupName}" (${response.status}). ${body}`.trim());
   }
 
-  Logger.success(`Created crew "${groupName}" in project ${projectId}.`);
+  Logger.success(`Created group "${groupName}" in project ${projectId}.`);
   return response.json();
 };
 
@@ -84,10 +84,10 @@ export const removeUserFromGroup = async (token, regionName, groupId, userId) =>
 };
 
 /**
- * Loads every crew for the given projects, tagged with its project so the UI can group by site.
+ * Loads every group for the given projects, tagged with its project so the UI can group by project.
  * Runs in small batches to stay friendly to the API.
  */
-export const getCrewsByProject = async (token, regionName, projects, onProgress) => {
+export const getGroupsByProject = async (token, regionName, projects, onProgress) => {
   const list = asList(projects).filter((project) => project?.id);
   if (list.length === 0) return [];
 
@@ -103,7 +103,7 @@ export const getCrewsByProject = async (token, regionName, projects, onProgress)
         return {
           projectId: project.id,
           projectName: project.name || project.title || 'Untitled project',
-          crews: groups
+          groups: groups
             .map((group) => ({ id: group.id, name: group.name }))
             .sort((a, b) => String(a.name).localeCompare(String(b.name))),
         };

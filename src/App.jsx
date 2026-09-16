@@ -8,7 +8,7 @@ import EmptyState from './components/Modus/EmptyState';
 import LoginScreen from './components/Auth/LoginScreen';
 import OnboardView from './components/Onboarding/OnboardView';
 import RelayView from './components/Relay/RelayView';
-import CrewsView from './components/Crews/CrewsView';
+import GroupsView from './components/Groups/GroupsView';
 import SettingsView from './components/Settings/SettingsView';
 
 import { useI18n } from './i18n/context';
@@ -224,7 +224,7 @@ function App() {
     }
 
     if (activeView === 'replace') return <RelayView {...sharedProps} />;
-    if (activeView === 'crews') return <CrewsView projects={projects} region={region} getToken={getToken} />;
+    if (activeView === 'groups') return <GroupsView projects={projects} region={region} getToken={getToken} />;
     return <OnboardView {...sharedProps} />;
   };
 

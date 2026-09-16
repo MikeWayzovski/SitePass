@@ -9,7 +9,7 @@ const STATUS_STYLE = {
 };
 
 /**
- * Shows every step the API actually performed. Partial failures are normal when a site
+ * Shows every step the API actually performed. Partial failures are normal when a project
  * has stricter permissions, so the run reports instead of throwing away the whole batch.
  */
 const ProgressReport = ({ report, isRunning }) => {
@@ -46,10 +46,10 @@ const ProgressReport = ({ report, isRunning }) => {
         {report.map((entry, index) => {
           const style = STATUS_STYLE[entry.status] || STATUS_STYLE.skipped;
           return (
-            <li key={`${entry.site}-${index}`} className="d-flex align-items-start gap-2 py-1 small">
+            <li key={`${entry.project}-${index}`} className="d-flex align-items-start gap-2 py-1 small">
               <ModusIcon name={style.icon} size="16px" extraClasses={`${style.className} flex-shrink-0 mt-1`} />
               <span className="min-w-0">
-                <span className="fw-semibold">{entry.site}</span>
+                <span className="fw-semibold">{entry.project}</span>
                 <span className="text-muted"> — {entry.message}</span>
               </span>
             </li>

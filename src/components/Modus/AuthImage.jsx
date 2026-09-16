@@ -9,7 +9,7 @@ import { GLOBAL_BASE_URL } from '../../api/config';
  * URL instead.
  *
  * Resolved URLs are cached per source for the lifetime of the page: the same avatar shows up
- * in people pickers, crew lists and the header, and each should cost one request.
+ * in people pickers, group lists and the header, and each should cost one request.
  */
 const cache = new Map();
 

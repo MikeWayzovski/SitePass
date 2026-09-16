@@ -17,7 +17,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const LEAVER_OPTIONS = [
   { id: 'keep', labelKey: 'replace.keepAccess', hintKey: 'replace.keepAccessHint' },
-  { id: 'crews', labelKey: 'replace.removeCrews', hintKey: 'replace.removeCrewsHint' },
+  { id: 'groups', labelKey: 'replace.removeGroups', hintKey: 'replace.removeGroupsHint' },
   { id: 'project', labelKey: 'replace.removeAll', hintKey: 'replace.removeAllHint' },
 ];
 
@@ -71,14 +71,14 @@ const RelayView = ({ projects, people, isLoadingPeople, region, getToken, defaul
     try {
       const token = await getToken();
 
-      // Grant first: if the handover fails halfway the site never loses its last holder.
+      // Grant first: if the handover fails halfway the project never loses its last holder.
       const granted = await grantAccess({
         token,
         region,
         email,
         targets: selection.targets,
         notify: defaults.notify,
-        createMissingCrews: defaults.createMissingCrews,
+        createMissingGroups: defaults.createMissingGroups,
         onStep: appendStep,
       });
 
@@ -96,7 +96,7 @@ const RelayView = ({ projects, people, isLoadingPeople, region, getToken, defaul
       } else if (leaverAction !== 'keep' && grantFailed) {
         appendStep({
           status: 'skipped',
-          site: leaver.name,
+          project: leaver.name,
           message: t('replace.keptAfterFailure'),
         });
       }
@@ -173,11 +173,11 @@ const RelayView = ({ projects, people, isLoadingPeople, region, getToken, defaul
               <Spinner label={t('loading.access')} small />
             ) : (
               <AccessMatrix
-                sites={selection.sites}
-                selectedSiteIds={selection.selectedSiteIds}
-                selectedCrewsBySite={selection.selectedCrewsBySite}
-                onToggleSite={selection.toggleSite}
-                onToggleCrew={selection.toggleCrew}
+                projects={selection.projects}
+                selectedProjectIds={selection.selectedProjectIds}
+                selectedGroupsByProject={selection.selectedGroupsByProject}
+                onToggleProject={selection.toggleProject}
+                onToggleGroup={selection.toggleGroup}
                 onSelectAll={selection.selectAll}
                 onClearAll={selection.clearAll}
                 disabled={isRunning}
@@ -235,7 +235,7 @@ const RelayView = ({ projects, people, isLoadingPeople, region, getToken, defaul
           t('replace.confirmBody', {
             to: email,
             from: leaver?.name || '',
-            sites: t('common.site', { count: selection.targets.length }),
+            projects: t('common.project', { count: selection.targets.length }),
           }) + (leaverAction === 'keep' ? '' : t('replace.confirmRemoval', { from: leaver?.name || '' }))
         }
         confirmText={t('replace.submit')}

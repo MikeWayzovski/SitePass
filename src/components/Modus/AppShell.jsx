@@ -7,7 +7,7 @@ import { REGIONS } from '../../api/config';
 const NAV_ITEMS = [
   { id: 'onboard', icon: 'user-plus', labelKey: 'nav.onboard', hintKey: 'nav.onboardHint' },
   { id: 'replace', icon: 'user-switch', labelKey: 'nav.replace', hintKey: 'nav.replaceHint' },
-  { id: 'crews', icon: 'users-four', labelKey: 'nav.crews', hintKey: 'nav.crewsHint' },
+  { id: 'groups', icon: 'users-four', labelKey: 'nav.groups', hintKey: 'nav.groupsHint' },
   { id: 'settings', icon: 'gear', labelKey: 'nav.settings', hintKey: 'nav.settingsHint' },
 ];
 

@@ -75,11 +75,11 @@ const SettingsView = ({ settings, updateSetting, showToast }) => {
               <input
                 className="form-check-input"
                 type="checkbox"
-                id="settings-create-crews"
-                checked={settings.createMissingCrews}
-                onChange={(event) => updateSetting('createMissingCrews', event.target.checked)}
+                id="settings-create-groups"
+                checked={settings.createMissingGroups}
+                onChange={(event) => updateSetting('createMissingGroups', event.target.checked)}
               />
-              <label className="form-check-label small" htmlFor="settings-create-crews">
+              <label className="form-check-label small" htmlFor="settings-create-groups">
                 {t('onboard.createMissing')}
               </label>
             </div>

@@ -6,12 +6,17 @@ const DEFAULTS = {
   region: 'europe',
   role: 'USER',
   notify: true,
-  createMissingCrews: true,
+  createMissingGroups: true,
 };
 
 const read = () => {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') };
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    if (stored.createMissingCrews !== undefined && stored.createMissingGroups === undefined) {
+      stored.createMissingGroups = stored.createMissingCrews;
+    }
+    delete stored.createMissingCrews;
+    return { ...DEFAULTS, ...stored };
   } catch {
     return { ...DEFAULTS };
   }

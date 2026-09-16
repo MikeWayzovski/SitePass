@@ -6,7 +6,7 @@ import EmptyState from './EmptyState';
 import { useI18n } from '../../i18n/context';
 
 /**
- * Searchable list of people. Deliberately a list and not a <select>: crews are picked by
+ * Searchable list of people. Deliberately a list and not a <select>: people are picked by
  * recognising a face and an email, which a dropdown hides.
  */
 const PersonPicker = ({ people, isLoading, selectedId, onSelect, emptyBody, maxHeight = '17rem' }) => {
@@ -60,9 +60,9 @@ const PersonPicker = ({ people, isLoading, selectedId, onSelect, emptyBody, maxH
                 <span className="fw-semibold text-truncate">{person.name}</span>
                 <span className={`small text-truncate ${isSelected ? '' : 'text-muted'}`}>{person.email}</span>
               </span>
-              {person.siteIds?.length ? (
+              {person.projectIds?.length ? (
                 <span className={`badge flex-shrink-0 ${isSelected ? 'text-bg-light' : 'text-bg-secondary'}`}>
-                  {t('common.site', { count: person.siteIds.length })}
+                  {t('common.project', { count: person.projectIds.length })}
                 </span>
               ) : null}
             </button>

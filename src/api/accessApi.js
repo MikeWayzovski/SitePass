@@ -30,7 +30,7 @@ export const fullName = (user) =>
 
 /**
  * Everyone who is active on at least one of the given projects, de-duplicated by user id and
- * annotated with the sites they appear on. This is the people picker behind every SitePass flow.
+ * annotated with the projects they appear on. This is the people picker behind every SitePass flow.
  */
 export const listPeopleAcrossProjects = async (token, region, projects, onProgress) => {
   const byId = new Map();
@@ -44,14 +44,14 @@ export const listPeopleAcrossProjects = async (token, region, projects, onProgre
 
         const existing = byId.get(user.id);
         if (existing) {
-          existing.siteIds.push(project.id);
+          existing.projectIds.push(project.id);
           return;
         }
 
         byId.set(user.id, {
           ...user,
           name: fullName(user),
-          siteIds: [project.id],
+          projectIds: [project.id],
         });
       });
     },
@@ -62,11 +62,11 @@ export const listPeopleAcrossProjects = async (token, region, projects, onProgre
 };
 
 /**
- * Reads what one person can actually reach: their role per project plus crew membership.
- * `projects` should already be narrowed to the sites worth scanning, since each one costs calls.
+ * Reads what one person can actually reach: their role per project plus group membership.
+ * `projects` should already be narrowed to the ones worth scanning, since each one costs calls.
  */
 export const buildAccessProfile = async ({ token, region, projects, userId, email, onProgress }) => {
-  const sites = [];
+  const profile = [];
 
   await runInBatches(
     projects,
@@ -77,33 +77,33 @@ export const buildAccessProfile = async ({ token, region, projects, userId, emai
       );
       if (!match) return;
 
-      const groups = await getProjectGroups(token, region, project.id);
-      const crews = [];
+      const projectGroups = await getProjectGroups(token, region, project.id);
+      const groups = [];
 
-      for (const group of groups) {
+      for (const group of projectGroups) {
         const groupUsers = await getGroupUsers(token, region, group.id);
         if (groupUsers.some((groupUser) => groupUser.id === match.id)) {
-          crews.push({ id: group.id, name: group.name });
+          groups.push({ id: group.id, name: group.name });
         }
       }
 
-      sites.push({
+      profile.push({
         projectId: project.id,
         projectName: project.name || 'Untitled project',
         userId: match.id,
         role: match.role || 'USER',
-        crews: crews.sort((a, b) => String(a.name).localeCompare(String(b.name))),
+        groups: groups.sort((a, b) => String(a.name).localeCompare(String(b.name))),
       });
     },
     onProgress,
   );
 
-  return sites.sort((a, b) => a.projectName.localeCompare(b.projectName));
+  return profile.sort((a, b) => a.projectName.localeCompare(b.projectName));
 };
 
 /**
- * Grants access. `targets` is [{ projectId, projectName, role, crewNames: [] }].
- * Crews are matched by name so a template from one site can be applied to another.
+ * Grants access. `targets` is [{ projectId, projectName, role, groupNames: [] }].
+ * Groups are matched by name so a template from one project can be applied to another.
  * Returns a per-step report instead of throwing, so partial success stays visible.
  */
 export const grantAccess = async ({
@@ -112,7 +112,7 @@ export const grantAccess = async ({
   email,
   targets,
   notify = true,
-  createMissingCrews = true,
+  createMissingGroups = true,
   onStep,
 }) => {
   const report = [];
@@ -129,56 +129,56 @@ export const grantAccess = async ({
     try {
       user = await findProjectUserByEmail(token, region, target.projectId, email);
       if (user) {
-        record({ status: 'skipped', site: label, message: `${email} is already a member.` });
+        record({ status: 'skipped', project: label, message: `${email} is already a member.` });
       } else {
         user = await addUserToProject(token, region, target.projectId, email, target.role || 'USER', notify);
-        record({ status: 'done', site: label, message: `Invited ${email} as ${target.role || 'USER'}.` });
+        record({ status: 'done', project: label, message: `Invited ${email} as ${target.role || 'USER'}.` });
       }
     } catch (error) {
-      record({ status: 'failed', site: label, message: error.message });
+      record({ status: 'failed', project: label, message: error.message });
       continue;
     }
 
     if (!user?.id) {
-      record({ status: 'failed', site: label, message: 'Trimble did not return a user id for this invite.' });
+      record({ status: 'failed', project: label, message: 'Trimble did not return a user id for this invite.' });
       continue;
     }
 
-    const existingCrews = await getProjectGroups(token, region, target.projectId);
+    const existingGroups = await getProjectGroups(token, region, target.projectId);
 
-    for (const crewName of target.crewNames || []) {
-      const crew = existingCrews.find(
-        (group) => String(group.name).toLowerCase() === String(crewName).toLowerCase(),
+    for (const groupName of target.groupNames || []) {
+      const group = existingGroups.find(
+        (item) => String(item.name).toLowerCase() === String(groupName).toLowerCase(),
       );
 
       try {
-        if (crew) {
-          const members = await getGroupUsers(token, region, crew.id);
+        if (group) {
+          const members = await getGroupUsers(token, region, group.id);
           if (members.some((member) => member.id === user.id)) {
-            record({ status: 'skipped', site: label, message: `Already in crew "${crew.name}".` });
+            record({ status: 'skipped', project: label, message: `Already in group "${group.name}".` });
             continue;
           }
-          const added = await addUserToGroup(token, region, crew.id, user.id);
+          const added = await addUserToGroup(token, region, group.id, user.id);
           record({
             status: added ? 'done' : 'failed',
-            site: label,
-            message: added ? `Added to crew "${crew.name}".` : `Could not add to crew "${crew.name}".`,
+            project: label,
+            message: added ? `Added to group "${group.name}".` : `Could not add to group "${group.name}".`,
           });
-        } else if (createMissingCrews) {
-          const created = await createProjectGroup(token, region, target.projectId, crewName);
+        } else if (createMissingGroups) {
+          const created = await createProjectGroup(token, region, target.projectId, groupName);
           const added = await addUserToGroup(token, region, created.id, user.id);
           record({
             status: added ? 'done' : 'failed',
-            site: label,
+            project: label,
             message: added
-              ? `Created crew "${crewName}" and added ${email}.`
-              : `Created crew "${crewName}" but could not add ${email}.`,
+              ? `Created group "${groupName}" and added ${email}.`
+              : `Created group "${groupName}" but could not add ${email}.`,
           });
         } else {
-          record({ status: 'skipped', site: label, message: `Crew "${crewName}" does not exist here.` });
+          record({ status: 'skipped', project: label, message: `Group "${groupName}" does not exist here.` });
         }
       } catch (error) {
-        record({ status: 'failed', site: label, message: error.message });
+        record({ status: 'failed', project: label, message: error.message });
       }
     }
   }
@@ -188,7 +188,7 @@ export const grantAccess = async ({
 };
 
 /**
- * Removes a person from the given sites. `mode` is 'crews' to only drop crew membership,
+ * Removes a person from the given projects. `mode` is 'groups' to only drop group membership,
  * or 'project' to also remove them from the project itself.
  */
 export const revokeAccess = async ({ token, region, userId, targets, mode = 'project', onStep }) => {
@@ -202,21 +202,21 @@ export const revokeAccess = async ({ token, region, userId, targets, mode = 'pro
   for (const target of targets) {
     const label = target.projectName || target.projectId;
 
-    for (const crew of target.crews || []) {
-      const removed = await removeUserFromGroup(token, region, crew.id, userId);
+    for (const group of target.groups || []) {
+      const removed = await removeUserFromGroup(token, region, group.id, userId);
       record({
         status: removed ? 'done' : 'failed',
-        site: label,
-        message: removed ? `Removed from crew "${crew.name}".` : `Could not remove from crew "${crew.name}".`,
+        project: label,
+        message: removed ? `Removed from group "${group.name}".` : `Could not remove from group "${group.name}".`,
       });
     }
 
     if (mode === 'project') {
       try {
         await removeUserFromProject(token, region, target.projectId, userId);
-        record({ status: 'done', site: label, message: 'Removed from the project.' });
+        record({ status: 'done', project: label, message: 'Removed from the project.' });
       } catch (error) {
-        record({ status: 'failed', site: label, message: error.message });
+        record({ status: 'failed', project: label, message: error.message });
       }
     }
   }

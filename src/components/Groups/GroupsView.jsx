@@ -5,11 +5,11 @@ import EmptyState from '../Modus/EmptyState';
 import PersonAvatar from '../Modus/PersonAvatar';
 import CopyableText from '../Modus/CopyableText';
 import { useI18n } from '../../i18n/context';
-import { getCrewsByProject, getGroupUsers } from '../../api/groupsApi';
+import { getGroupsByProject, getGroupUsers } from '../../api/groupsApi';
 import { fullName } from '../../api/accessApi';
 import { Logger } from '../../utils/logger';
 
-const CrewRow = ({ crew, region, getToken }) => {
+const GroupRow = ({ group, region, getToken }) => {
   const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [members, setMembers] = useState(null);
@@ -23,9 +23,9 @@ const CrewRow = ({ crew, region, getToken }) => {
     setIsLoading(true);
     try {
       const token = await getToken();
-      setMembers(await getGroupUsers(token, region, crew.id));
+      setMembers(await getGroupUsers(token, region, group.id));
     } catch (error) {
-      Logger.warn(`Could not load members of crew ${crew.name}`, error.message);
+      Logger.warn(`Could not load members of group ${group.name}`, error.message);
       setMembers([]);
     } finally {
       setIsLoading(false);
@@ -42,7 +42,7 @@ const CrewRow = ({ crew, region, getToken }) => {
       >
         <ModusIcon name={isOpen ? 'caret-down' : 'caret-right'} size="16px" extraClasses="text-muted flex-shrink-0" />
         <ModusIcon name="users-four" size="18px" extraClasses="text-secondary flex-shrink-0" />
-        <span className="text-truncate flex-grow-1">{crew.name}</span>
+        <span className="text-truncate flex-grow-1">{group.name}</span>
         {members ? (
           <span className="badge text-bg-secondary flex-shrink-0">
             {t('common.member', { count: members.length })}
@@ -67,7 +67,7 @@ const CrewRow = ({ crew, region, getToken }) => {
               ))}
             </ul>
           ) : (
-            <p className="text-muted small mb-0">{t('crews.noMembers')}</p>
+            <p className="text-muted small mb-0">{t('groups.noMembers')}</p>
           )}
         </div>
       ) : null}
@@ -75,9 +75,9 @@ const CrewRow = ({ crew, region, getToken }) => {
   );
 };
 
-const CrewsView = ({ projects, region, getToken }) => {
+const GroupsView = ({ projects, region, getToken }) => {
   const { t } = useI18n();
-  const [sites, setSites] = useState([]);
+  const [grouped, setGrouped] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
@@ -90,9 +90,9 @@ const CrewsView = ({ projects, region, getToken }) => {
 
     try {
       const token = await getToken();
-      setSites(await getCrewsByProject(token, region, projects, setProgress));
+      setGrouped(await getGroupsByProject(token, region, projects, setProgress));
     } catch (loadError) {
-      Logger.error('Could not load crews', loadError.message);
+      Logger.error('Could not load groups', loadError.message);
       setError(loadError);
     } finally {
       setIsLoading(false);
@@ -107,25 +107,25 @@ const CrewsView = ({ projects, region, getToken }) => {
 
   const matches = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const withCrews = sites.filter((site) => site.crews.length > 0);
-    if (!needle) return withCrews;
+    const withGroups = grouped.filter((entry) => entry.groups.length > 0);
+    if (!needle) return withGroups;
 
-    return withCrews
-      .map((site) => ({
-        ...site,
-        crews: site.projectName.toLowerCase().includes(needle)
-          ? site.crews
-          : site.crews.filter((crew) => String(crew.name).toLowerCase().includes(needle)),
+    return withGroups
+      .map((entry) => ({
+        ...entry,
+        groups: entry.projectName.toLowerCase().includes(needle)
+          ? entry.groups
+          : entry.groups.filter((group) => String(group.name).toLowerCase().includes(needle)),
       }))
-      .filter((site) => site.crews.length > 0);
-  }, [sites, query]);
+      .filter((entry) => entry.groups.length > 0);
+  }, [grouped, query]);
 
   return (
     <div className="d-flex flex-column gap-3">
       <header className="d-flex flex-wrap align-items-end justify-content-between gap-3">
         <div>
-          <h1 className="h4 fw-bold mb-1">{t('crews.title')}</h1>
-          <p className="text-muted mb-0">{t('crews.subtitle')}</p>
+          <h1 className="h4 fw-bold mb-1">{t('groups.title')}</h1>
+          <p className="text-muted mb-0">{t('groups.subtitle')}</p>
         </div>
 
         <div className="input-group input-group-sm" style={{ maxWidth: '20rem' }}>
@@ -135,8 +135,8 @@ const CrewsView = ({ projects, region, getToken }) => {
           <input
             type="search"
             className="form-control"
-            placeholder={t('crews.filter')}
-            aria-label={t('crews.filter')}
+            placeholder={t('groups.filter')}
+            aria-label={t('groups.filter')}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
@@ -146,7 +146,7 @@ const CrewsView = ({ projects, region, getToken }) => {
       {isLoading ? (
         <div className="card border-0 shadow-sm">
           <div className="card-body">
-            <Spinner label={`${t('loading.crews')} ${progress}%`} small />
+            <Spinner label={`${t('loading.groups')} ${progress}%`} small />
             <div className="progress mt-3" style={{ height: '0.35rem' }}>
               <div className="progress-bar" style={{ width: `${progress}%` }} />
             </div>
@@ -170,26 +170,26 @@ const CrewsView = ({ projects, region, getToken }) => {
       ) : matches.length === 0 ? (
         <div className="card border-0 shadow-sm">
           <div className="card-body">
-            <EmptyState icon="users-four" body={t('crews.emptyAll')} />
+            <EmptyState icon="users-four" body={t('groups.emptyAll')} />
           </div>
         </div>
       ) : (
         <div className="row g-3">
-          {matches.map((site) => (
-            <div className="col-xl-6" key={site.projectId}>
+          {matches.map((entry) => (
+            <div className="col-xl-6" key={entry.projectId}>
               <section className="card border-0 shadow-sm h-100">
                 <div className="card-header bg-transparent d-flex align-items-center gap-2">
                   <ModusIcon name="hard-hat" size="20px" extraClasses="text-primary flex-shrink-0" />
-                  <h2 className="h6 mb-0 text-truncate" title={site.projectName}>
-                    {site.projectName}
+                  <h2 className="h6 mb-0 text-truncate" title={entry.projectName}>
+                    {entry.projectName}
                   </h2>
                   <span className="badge text-bg-secondary ms-auto flex-shrink-0">
-                    {t('common.crew', { count: site.crews.length })}
+                    {t('common.group', { count: entry.groups.length })}
                   </span>
                 </div>
                 <ul className="list-group list-group-flush">
-                  {site.crews.map((crew) => (
-                    <CrewRow key={crew.id} crew={crew} region={region} getToken={getToken} />
+                  {entry.groups.map((group) => (
+                    <GroupRow key={group.id} group={group} region={region} getToken={getToken} />
                   ))}
                 </ul>
               </section>
@@ -201,4 +201,4 @@ const CrewsView = ({ projects, region, getToken }) => {
   );
 };
 
-export default CrewsView;
+export default GroupsView;

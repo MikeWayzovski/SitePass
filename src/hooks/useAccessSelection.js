@@ -8,16 +8,16 @@ import { Logger } from '../utils/logger';
  * Same read, same selection model, so both flows share this hook.
  */
 export const useAccessSelection = ({ getToken, region, projects, person }) => {
-  const [sites, setSites] = useState([]);
+  const [profile, setProfile] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedSiteIds, setSelectedSiteIds] = useState([]);
-  const [selectedCrewsBySite, setSelectedCrewsBySite] = useState({});
+  const [selectedProjectIds, setSelectedProjectIds] = useState([]);
+  const [selectedGroupsByProject, setSelectedGroupsByProject] = useState({});
 
   const reset = useCallback(() => {
-    setSites([]);
-    setSelectedSiteIds([]);
-    setSelectedCrewsBySite({});
+    setProfile([]);
+    setSelectedProjectIds([]);
+    setSelectedGroupsByProject({});
     setError(null);
   }, []);
 
@@ -32,12 +32,12 @@ export const useAccessSelection = ({ getToken, region, projects, person }) => {
 
     try {
       const token = await getToken();
-      // Only the sites the person actually appears on are worth scanning for crews.
-      const scope = person.siteIds?.length
-        ? projects.filter((project) => person.siteIds.includes(project.id))
+      // Only the projects the person actually appears on are worth scanning for groups.
+      const scope = person.projectIds?.length
+        ? projects.filter((project) => person.projectIds.includes(project.id))
         : projects;
 
-      const profile = await buildAccessProfile({
+      const loaded = await buildAccessProfile({
         token,
         region,
         projects: scope,
@@ -45,15 +45,15 @@ export const useAccessSelection = ({ getToken, region, projects, person }) => {
         email: person.email,
       });
 
-      setSites(profile);
-      setSelectedSiteIds(profile.map((site) => site.projectId));
-      setSelectedCrewsBySite(
-        Object.fromEntries(profile.map((site) => [site.projectId, site.crews.map((crew) => crew.name)])),
+      setProfile(loaded);
+      setSelectedProjectIds(loaded.map((entry) => entry.projectId));
+      setSelectedGroupsByProject(
+        Object.fromEntries(loaded.map((entry) => [entry.projectId, entry.groups.map((group) => group.name)])),
       );
     } catch (loadError) {
       Logger.error('Could not build the access profile', loadError.message);
       setError(loadError);
-      setSites([]);
+      setProfile([]);
     } finally {
       setIsLoading(false);
     }
@@ -66,68 +66,70 @@ export const useAccessSelection = ({ getToken, region, projects, person }) => {
     load();
   }, [load]);
 
-  const toggleSite = useCallback((projectId) => {
-    setSelectedSiteIds((current) =>
+  const toggleProject = useCallback((projectId) => {
+    setSelectedProjectIds((current) =>
       current.includes(projectId) ? current.filter((id) => id !== projectId) : [...current, projectId],
     );
   }, []);
 
-  const toggleCrew = useCallback((projectId, crewName) => {
-    setSelectedCrewsBySite((current) => {
+  const toggleGroup = useCallback((projectId, groupName) => {
+    setSelectedGroupsByProject((current) => {
       const chosen = current[projectId] || [];
       return {
         ...current,
-        [projectId]: chosen.includes(crewName)
-          ? chosen.filter((name) => name !== crewName)
-          : [...chosen, crewName],
+        [projectId]: chosen.includes(groupName)
+          ? chosen.filter((name) => name !== groupName)
+          : [...chosen, groupName],
       };
     });
   }, []);
 
   const selectAll = useCallback(() => {
-    setSelectedSiteIds(sites.map((site) => site.projectId));
-    setSelectedCrewsBySite(
-      Object.fromEntries(sites.map((site) => [site.projectId, site.crews.map((crew) => crew.name)])),
+    setSelectedProjectIds(profile.map((entry) => entry.projectId));
+    setSelectedGroupsByProject(
+      Object.fromEntries(profile.map((entry) => [entry.projectId, entry.groups.map((group) => group.name)])),
     );
-  }, [sites]);
+  }, [profile]);
 
   const clearAll = useCallback(() => {
-    setSelectedSiteIds([]);
-    setSelectedCrewsBySite({});
+    setSelectedProjectIds([]);
+    setSelectedGroupsByProject({});
   }, []);
 
   /** The selection shaped the way grantAccess and revokeAccess expect it. */
   const targets = useMemo(
     () =>
-      sites
-        .filter((site) => selectedSiteIds.includes(site.projectId))
-        .map((site) => ({
-          projectId: site.projectId,
-          projectName: site.projectName,
-          role: site.role,
-          crewNames: selectedCrewsBySite[site.projectId] || [],
-          crews: site.crews.filter((crew) => (selectedCrewsBySite[site.projectId] || []).includes(crew.name)),
+      profile
+        .filter((entry) => selectedProjectIds.includes(entry.projectId))
+        .map((entry) => ({
+          projectId: entry.projectId,
+          projectName: entry.projectName,
+          role: entry.role,
+          groupNames: selectedGroupsByProject[entry.projectId] || [],
+          groups: entry.groups.filter((group) =>
+            (selectedGroupsByProject[entry.projectId] || []).includes(group.name),
+          ),
         })),
-    [sites, selectedSiteIds, selectedCrewsBySite],
+    [profile, selectedProjectIds, selectedGroupsByProject],
   );
 
-  const crewCount = useMemo(
-    () => targets.reduce((total, target) => total + target.crewNames.length, 0),
+  const groupCount = useMemo(
+    () => targets.reduce((total, target) => total + target.groupNames.length, 0),
     [targets],
   );
 
   return {
-    sites,
+    projects: profile,
     isLoading,
     error,
-    selectedSiteIds,
-    selectedCrewsBySite,
-    toggleSite,
-    toggleCrew,
+    selectedProjectIds,
+    selectedGroupsByProject,
+    toggleProject,
+    toggleGroup,
     selectAll,
     clearAll,
     targets,
-    crewCount,
+    groupCount,
     reload: load,
   };
 };
