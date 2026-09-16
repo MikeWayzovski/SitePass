@@ -27,7 +27,7 @@ import {
   exportToJSON,
   stampFileName,
 } from './utils/auditLogger';
-import { saveFilesToLogsFolder } from './api/filesApi';
+import { saveFilesToProjectRoot } from './api/filesApi';
 
 /** People are scanned across the most recently touched projects; a full account scan is too slow. */
 const PEOPLE_SCAN_LIMIT = 12;
@@ -171,6 +171,9 @@ function App() {
   }, [logout]);
 
   const auditProjectId = embeddedProject?.id || settings.auditProjectId || '';
+  const auditProject =
+    (embeddedProject?.id === auditProjectId ? embeddedProject : null) ||
+    projects.find((project) => project.id === auditProjectId);
 
   const recordAudit = useCallback(
     async (partial) => {
@@ -188,7 +191,7 @@ function App() {
       try {
         const token = await getToken();
         const prefix = `sitepass-${String(entry.actionType).toLowerCase()}`;
-        await saveFilesToLogsFolder(token, region, auditProjectId, [
+        await saveFilesToProjectRoot(token, region, auditProjectId, [
           {
             name: stampFileName(prefix, 'csv'),
             content: exportToCSV([entry], settings.csvSeparator),
@@ -199,7 +202,7 @@ function App() {
             content: exportToJSON([entry]),
             type: 'application/json',
           },
-        ]);
+        ], auditProject);
         showToast(t('settings.auditSaved'), 'success');
       } catch (error) {
         Logger.error('Could not auto-save the audit log', error.message);
@@ -213,6 +216,7 @@ function App() {
       settings.autoSaveAudit,
       settings.csvSeparator,
       auditProjectId,
+      auditProject,
       getToken,
       region,
       showToast,

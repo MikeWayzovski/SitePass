@@ -225,5 +225,5 @@ export const revokeAccess = async ({ token, region, userId, targets, mode = 'pro
   return report;
 };
 
-export { saveFilesToLogsFolder, LOGS_FOLDER_NAME } from './filesApi';
+export { saveFilesToProjectRoot, saveFilesToLogsFolder } from './filesApi';
 

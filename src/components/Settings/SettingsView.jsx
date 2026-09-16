@@ -9,7 +9,7 @@ import {
   exportToCSV,
   stampFileName,
 } from '../../utils/auditLogger';
-import { saveFilesToLogsFolder } from '../../api/filesApi';
+import { saveFilesToProjectRoot } from '../../api/filesApi';
 import { APP_VERSION, DOCS_URL } from '../../appInfo';
 
 const SettingsView = ({
@@ -26,8 +26,10 @@ const SettingsView = ({
   const [isSavingSnapshot, setIsSavingSnapshot] = useState(false);
 
   const auditProjectId = embeddedProject?.id || settings.auditProjectId;
-  const auditProjectName =
-    embeddedProject?.name || projects.find((project) => project.id === auditProjectId)?.name;
+  const auditProject =
+    (embeddedProject?.id === auditProjectId ? embeddedProject : null) ||
+    projects.find((project) => project.id === auditProjectId);
+  const auditProjectName = embeddedProject?.name || auditProject?.name;
 
   const handleExportDiagnostics = () => {
     const exported = Logger.exportLogs();
@@ -69,7 +71,7 @@ const SettingsView = ({
       };
 
       const token = await getToken();
-      await saveFilesToLogsFolder(token, region, auditProjectId, [
+      await saveFilesToProjectRoot(token, region, auditProjectId, [
         {
           name: `${stamp}.csv`,
           content: exportToCSV(entries, settings.csvSeparator),
@@ -80,7 +82,7 @@ const SettingsView = ({
           content: `${JSON.stringify(snapshot, null, 2)}\n`,
           type: 'application/json',
         },
-      ]);
+      ], auditProject);
       showToast(t('settings.auditSaved'), 'success');
     } catch (error) {
       showToast(t('settings.auditSaveFailed', { message: error.message }), 'danger');
