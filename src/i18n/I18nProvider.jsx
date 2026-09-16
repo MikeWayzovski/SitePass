@@ -1,9 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import en from './en';
 import nl from './nl';
+import cs from './cs';
+import de from './de';
+import es from './es';
+import fr from './fr';
+import hu from './hu';
+import pl from './pl';
 import { I18nContext, LANGUAGES, STORAGE_KEY } from './context';
 
-const DICTIONARIES = { en, nl };
+const DICTIONARIES = { en, nl, cs, de, es, fr, hu, pl };
 
 const readPath = (dictionary, key) =>
   key.split('.').reduce((node, part) => (node == null ? undefined : node[part]), dictionary);

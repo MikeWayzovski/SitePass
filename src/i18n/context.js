@@ -1,8 +1,14 @@
 import { createContext, useContext } from 'react';
 
 export const LANGUAGES = [
-  { id: 'en', label: 'English' },
-  { id: 'nl', label: 'Nederlands' },
+  { id: 'en', label: 'English (English)' },
+  { id: 'nl', label: 'Nederlands (Dutch)' },
+  { id: 'cs', label: 'Čeština (Czech)' },
+  { id: 'de', label: 'Deutsch (German)' },
+  { id: 'es', label: 'Español (Spanish)' },
+  { id: 'fr', label: 'Français (French)' },
+  { id: 'hu', label: 'Magyar (Hungarian)' },
+  { id: 'pl', label: 'Polski (Polish)' },
 ];
 
 export const STORAGE_KEY = 'sitepass_language';
